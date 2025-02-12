@@ -79,19 +79,14 @@ func SetUser(state *State, username string) error {
 	return nil
 }
 
-/** Runs a given command with the provided state, if the command exists. */
-func Run(state *State, commandName string) error {
-	fn := commandRegistry[commandName]
+func GetCommand(commandName string) (cliHandler, error) {
+	fn, ok := commandRegistry[commandName]
 
-	if err := fn(state); err != nil {
-		return err
+	if !ok {
+		return nil, fmt.Errorf("Nonexistent command '%s'", commandName)
 	}
 
-	return nil
-}
-
-func RegisterAll() {
-	commandRegistry["login"] = handlerLogin
+	return fn, nil
 }
 
 /*
@@ -114,4 +109,9 @@ func handlerLogin(state *State, args ...string) error {
 
 	fmt.Printf("The user has been set as '%s'\n", username)
 	return nil
+}
+
+/** Automatically register all handler functions. */
+func init() {
+	commandRegistry["login"] = handlerLogin
 }
