@@ -2,20 +2,32 @@ package main
 
 import (
 	"fmt"
-	"github.com/BrandonIrizarry/gator/internal/config"
+	"github.com/BrandonIrizarry/gator/internal/configuration"
 	"os"
 )
 
+const configBasename = ".gatorconfig.json"
+
 func main() {
-	cfg, err := config.Read()
+	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v", err)
 	}
 
-	cfg.SetUser("bci")
+	state := configuration.State{
+		ConfigFile: fmt.Sprintf("%s/%s", homeDir, configBasename),
+	}
 
-	cfg, err = config.Read()
+	if err := configuration.Read(&state); err != nil {
+		fmt.Fprintf(os.Stderr, "%v", err)
+	}
 
-	fmt.Printf("%v", cfg)
+	configuration.SetUser(&state, "ted")
+
+	if err := configuration.Read(&state); err != nil {
+		fmt.Fprintf(os.Stderr, "%v", err)
+	}
+
+	fmt.Printf("%v\n%v\n", *state.Config, state.ConfigFile)
 }
