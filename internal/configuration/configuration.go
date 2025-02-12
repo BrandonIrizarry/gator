@@ -59,6 +59,10 @@ func Read(state *State) error {
 
 // Set the username in the configuration.
 func SetUser(state *State, username string) error {
+	if state.ConfigFile == "" {
+		return fmt.Errorf("Unconfigured file path to JSON data")
+	}
+
 	state.Config.CurrentUserName = username
 	buffer := new(bytes.Buffer)
 
