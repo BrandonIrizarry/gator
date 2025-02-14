@@ -142,6 +142,13 @@ func handlerLogin(state state, args ...string) error {
 	}
 
 	username := args[0]
+	ctx := context.Background()
+
+	// Note that, conversely to 'handlerRegister' (which see), we flag
+	// the _absence_ of the specified user.
+	if user, _ := state.db.GetUser(ctx, username); user.ID == [16]byte{} {
+		return fmt.Errorf("Nonexistent user '%s' (use 'register' to create a new user)", username)
+	}
 
 	if err := SetUser(state, username); err != nil {
 		return err
