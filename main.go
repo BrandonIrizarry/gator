@@ -18,7 +18,7 @@ func main() {
 	}
 
 	// Read the current JSON configuration into the State.
-	if err := configuration.Read(&state); err != nil {
+	if err := configuration.Read(state); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
@@ -44,7 +44,7 @@ func parseAndExecute(state configuration.State, args ...string) error {
 	}
 
 	// Invoke the given command.
-	if err = command(&state, os.Args[2:]...); err != nil {
+	if err = command(state, os.Args[2:]...); err != nil {
 		return err
 	}
 
