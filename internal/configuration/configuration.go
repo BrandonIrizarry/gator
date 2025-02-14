@@ -159,8 +159,15 @@ func handlerRegister(state state, args ...string) error {
 	newname := args[0]
 	ctx := context.Background()
 
-	if user, err := state.db.GetUser(ctx, newname); user.ID != [16]byte{} {
-		return fmt.Errorf("'%v' (is '%s' already registered?)", err, newname)
+	// Note that, since uuid.UUID is an alias for [16]byte, its
+	// zero-value would be '[16]byte{}' (all zeroes). And so a freshly
+	// initialized 'CreateUserParams' struct would have an ID field
+	// set to this value.
+	//
+	// Conversely, an existing database row will have this set to
+	// something non-zero, which is what we check for here.
+	if user, _ := state.db.GetUser(ctx, newname); user.ID != [16]byte{} {
+		return fmt.Errorf("User '%s' is already registered", newname)
 	}
 
 	newuser, err := state.db.CreateUser(ctx, database.CreateUserParams{
