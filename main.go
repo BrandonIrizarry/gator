@@ -9,7 +9,7 @@ import (
 const configBasename = ".gatorconfig.json"
 
 func main() {
-	// First, acquire the State the configuration file fullpath.
+	// First, acquire the State's configuration file fullpath.
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
