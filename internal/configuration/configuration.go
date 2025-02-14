@@ -2,9 +2,15 @@ package configuration
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/BrandonIrizarry/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 /** A struct for unmarshalling Gator's current JSON configuration. */
@@ -20,6 +26,9 @@ type state struct {
 
 	// The full path to the Gator JSON file.
 	ConfigFile string
+
+	// The interface to the database itself.
+	db *database.Queries
 }
 
 /*
@@ -33,16 +42,26 @@ type StateType = state
 var commandRegistry = make(map[string]cliHandler)
 
 /** Helper to facilitate creating a new state. */
-func NewState(configBasename string) (state, error) {
+func NewState(configBasename string, dbURL string) (state, error) {
+	// Get the user's home directory.
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
 		return state{}, err
 	}
 
+	// Open the database connection.
+	db, err := sql.Open("postgres", dbURL)
+
+	if err != nil {
+		return state{}, err
+	}
+
+	// With all the data in place, configure the state.
 	state := state{
 		ConfigFile: fmt.Sprintf("%s/%s", homeDir, configBasename),
 		Config:     &Config{},
+		db:         database.New(db),
 	}
 
 	return state, nil
@@ -132,7 +151,41 @@ func handlerLogin(state state, args ...string) error {
 	return nil
 }
 
+func handlerRegister(state state, args ...string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("Missing username argument. Who are you registering?")
+	}
+
+	newname := args[0]
+	ctx := context.Background()
+
+	if user, err := state.db.GetUser(ctx, newname); user.ID != [16]byte{} {
+		return fmt.Errorf("'%v' (is '%s' already registered?)", err, newname)
+	}
+
+	newuser, err := state.db.CreateUser(ctx, database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      args[0],
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if err = SetUser(state, newname); err != nil {
+		return err
+	}
+
+	fmt.Printf("User '%s' has been created", newname)
+	fmt.Printf("%v\n", newuser)
+
+	return nil
+}
+
 /** Automatically register all handler functions. */
 func init() {
 	commandRegistry["login"] = handlerLogin
+	commandRegistry["register"] = handlerRegister
 }

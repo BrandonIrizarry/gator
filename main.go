@@ -3,14 +3,18 @@ package main
 import (
 	"fmt"
 	"github.com/BrandonIrizarry/gator/internal/configuration"
+	_ "github.com/lib/pq"
 	"os"
 )
 
-const configBasename = ".gatorconfig.json"
+const (
+	configBasename = ".gatorconfig.json"
+	dbURL          = "postgres://postgres:boot.dev@localhost:5432/gator?sslmode=disable"
+)
 
 func main() {
 	// Initialize a new State.
-	state, err := configuration.NewState(configBasename)
+	state, err := configuration.NewState(configBasename, dbURL)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error defining State: %v\n", err)
