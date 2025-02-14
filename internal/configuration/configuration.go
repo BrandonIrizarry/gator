@@ -112,6 +112,10 @@ func GetCommand(commandName string) (cliHandler, error) {
     "handlerX", where the X denotes the functionality being
     implemented, for example, "handlerLogin" is the function enabling
     the 'gator login' command.
+
+    Note that the string elements of 'args' are not the original
+    command line arguments; rather, they are the intended arguments to
+    the command itself (_not_ including the command name).
 */
 func handlerLogin(state state, args ...string) error {
 	if len(args) == 0 {
