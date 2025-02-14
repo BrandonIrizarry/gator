@@ -31,6 +31,21 @@ type cliHandler = func(*State, ...string) error
 /** The command registry proper. */
 var commandRegistry = make(map[string]cliHandler)
 
+/** Helper to facilitate creating a new State. */
+func NewState(configBasename string) (State, error) {
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		return State{}, err
+	}
+
+	state := State{
+		ConfigFile: fmt.Sprintf("%s/%s", homeDir, configBasename),
+	}
+
+	return state, nil
+}
+
 /*
   - Read the contents of the given State struct's config file into the
     'config' portion of the same struct.

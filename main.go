@@ -10,16 +10,7 @@ const configBasename = ".gatorconfig.json"
 
 func main() {
 	// First, acquire the State's configuration file fullpath.
-	homeDir, err := os.UserHomeDir()
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
-
-	state := configuration.State{
-		ConfigFile: fmt.Sprintf("%s/%s", homeDir, configBasename),
-	}
+	state, err := configuration.NewState(configBasename)
 
 	// Read the current JSON configuration into the State.
 	if err := configuration.Read(&state); err != nil {
