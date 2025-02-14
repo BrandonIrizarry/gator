@@ -23,6 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Parse and execute the command.
 	if err = parseAndExecute(state, os.Args...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
