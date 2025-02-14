@@ -9,7 +9,7 @@ import (
 const configBasename = ".gatorconfig.json"
 
 func main() {
-	// First, acquire the State's configuration file fullpath.
+	// Initialize a new State.
 	state, err := configuration.NewState(configBasename)
 
 	if err != nil {
