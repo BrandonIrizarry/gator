@@ -30,7 +30,7 @@ func main() {
 	}
 }
 
-func parseAndExecute(state configuration.State, args ...string) error {
+func parseAndExecute(state configuration.StateType, args ...string) error {
 	// Parse the current command, and check if everything is OK.
 	if len(args) <= 1 {
 		fmt.Fprintf(os.Stderr, "No arguments provided\n")

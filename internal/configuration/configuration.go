@@ -14,7 +14,7 @@ type Config struct {
 }
 
 /** A struct for containing all necessary global state. */
-type State struct {
+type state struct {
 	// Gator's current JSON configuration.
 	Config *Config
 
@@ -26,20 +26,21 @@ type State struct {
   - An abbreviation for the canonical type signature CLI commands have
     as Go functions.
 */
-type cliHandler = func(State, ...string) error
+type cliHandler = func(state, ...string) error
+type StateType = state
 
 /** The command registry proper. */
 var commandRegistry = make(map[string]cliHandler)
 
-/** Helper to facilitate creating a new State. */
-func NewState(configBasename string) (State, error) {
+/** Helper to facilitate creating a new state. */
+func NewState(configBasename string) (state, error) {
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
-		return State{}, err
+		return state{}, err
 	}
 
-	state := State{
+	state := state{
 		ConfigFile: fmt.Sprintf("%s/%s", homeDir, configBasename),
 		Config:     &Config{},
 	}
@@ -48,10 +49,10 @@ func NewState(configBasename string) (State, error) {
 }
 
 /*
-  - Read the contents of the given State struct's config file into the
+  - Read the contents of the given state struct's config file into the
     'config' portion of the same struct.
 */
-func Read(state State) error {
+func Read(state state) error {
 	if state.ConfigFile == "" {
 		return fmt.Errorf("Unconfigured file path to JSON data")
 	}
@@ -74,7 +75,7 @@ func Read(state State) error {
 }
 
 // Set the username in the configuration.
-func SetUser(state State, username string) error {
+func SetUser(state state, username string) error {
 	if state.ConfigFile == "" {
 		return fmt.Errorf("Unconfigured file path to JSON data")
 	}
@@ -112,7 +113,7 @@ func GetCommand(commandName string) (cliHandler, error) {
     implemented, for example, "handlerLogin" is the function enabling
     the 'gator login' command.
 */
-func handlerLogin(state State, args ...string) error {
+func handlerLogin(state state, args ...string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing username argument")
 	}
