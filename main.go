@@ -23,24 +23,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = parseAndExecute(state, os.Args...); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+}
+
+func parseAndExecute(state configuration.State, args ...string) error {
 	// Parse the current command, and check if everything is OK.
-	if len(os.Args) <= 1 {
+	if len(args) <= 1 {
 		fmt.Fprintf(os.Stderr, "No arguments provided\n")
 		os.Exit(1)
 	}
 
-	commandName := os.Args[1]
+	commandName := args[1]
 	command, err := configuration.GetCommand(commandName)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+		return err
 	}
 
 	// Invoke the given command.
 	if err = command(&state, os.Args[2:]...); err != nil {
-		fmt.Fprintf(os.Stderr, "In command '%s': %v\n", commandName, err)
-		os.Exit(1)
+		return err
 	}
 
+	return nil
 }
