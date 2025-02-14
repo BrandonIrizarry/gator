@@ -12,6 +12,11 @@ func main() {
 	// First, acquire the State's configuration file fullpath.
 	state, err := configuration.NewState(configBasename)
 
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error defining State: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Read the current JSON configuration into the State.
 	if err := configuration.Read(&state); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
