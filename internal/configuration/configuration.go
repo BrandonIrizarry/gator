@@ -158,6 +158,10 @@ func handlerLogin(state state, args ...string) error {
 	return nil
 }
 
+/*
+  - Add (that is, register) the specified user to the 'users'
+    table.
+*/
 func handlerRegister(state state, args ...string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing username argument. Who are you registering?")
