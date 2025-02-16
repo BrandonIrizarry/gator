@@ -202,8 +202,54 @@ func handlerRegister(state state, args ...string) error {
 	return nil
 }
 
+/*
+  - Delete all records in the 'users' table. Used for testing purposes
+    only.
+*/
+func handlerReset(state state, args ...string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("The 'reset' command takes no arguments")
+	}
+
+	ctx := context.Background()
+
+	if err := state.db.Reset(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func handlerUsers(state state, args ...string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("The 'users' command takes no arguments")
+	}
+
+	ctx := context.Background()
+
+	users, err := state.db.GetUsers(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		maybeCurrent := ""
+
+		if state.Config.CurrentUserName == user.Name {
+			maybeCurrent = " (current)"
+		}
+
+		fmt.Printf("%s%s\n", user.Name, maybeCurrent)
+	}
+
+	return nil
+}
+
 /** Automatically register all handler functions. */
 func init() {
 	commandRegistry["login"] = handlerLogin
 	commandRegistry["register"] = handlerRegister
+	commandRegistry["reset"] = handlerReset
+	commandRegistry["users"] = handlerUsers
 }
