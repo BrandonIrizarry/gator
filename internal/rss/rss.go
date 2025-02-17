@@ -3,9 +3,11 @@ package rss
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -23,6 +25,32 @@ type RSSItem struct {
 	Link        string `xml:"link"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
+}
+
+func (rssFeed RSSFeed) String() string {
+	bodyBuffer := make([]string, 0, len(rssFeed.Channel.Item))
+
+	for _, rssItem := range rssFeed.Channel.Item {
+		rssItemStr := fmt.Sprintf("%v", rssItem)
+		bodyBuffer = append(bodyBuffer, rssItemStr)
+	}
+
+	body := strings.Join(bodyBuffer, "\n")
+
+	title := rssFeed.Channel.Title
+	link := rssFeed.Channel.Link
+	description := rssFeed.Channel.Description
+
+	return fmt.Sprintf("Title: %s\nLink: %s\nDescription: %s\nItems: %v\n", title, link, description, body)
+}
+
+func (rssItem RSSItem) String() string {
+	title := rssItem.Title
+	link := rssItem.Link
+	description := rssItem.Description
+	pubDate := rssItem.PubDate
+
+	return fmt.Sprintf("\tTitle: %s\n\tLink: %s\n\tDescription: %s\n\tPubDate: %s\n", title, link, description, pubDate)
 }
 
 func FetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
