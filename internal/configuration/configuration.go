@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/BrandonIrizarry/gator/internal/database"
+	"github.com/BrandonIrizarry/gator/internal/rss"
 	"github.com/google/uuid"
 )
 
@@ -246,10 +247,29 @@ func handlerUsers(state state, args ...string) error {
 	return nil
 }
 
+func handlerAgg(state state, args ...string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("The 'agg' command takes no arguments")
+	}
+
+	ctx := context.Background()
+
+	rssFeed, err := rss.FetchFeed(ctx, "https://www.wagslane.dev/index.xml")
+
+	if err != nil {
+		return fmt.Errorf("Error fetching feed: %v\n", rssFeed)
+	}
+
+	fmt.Println(rssFeed)
+
+	return nil
+}
+
 /** Automatically register all handler functions. */
 func init() {
 	commandRegistry["login"] = handlerLogin
 	commandRegistry["register"] = handlerRegister
 	commandRegistry["reset"] = handlerReset
 	commandRegistry["users"] = handlerUsers
+	commandRegistry["agg"] = handlerAgg
 }
