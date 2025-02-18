@@ -265,6 +265,38 @@ func handlerAgg(state state, args ...string) error {
 	return nil
 }
 
+func handlerAddFeed(state state, args ...string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("The 'addfeed' command takes a NAME and URL argument")
+	}
+
+	feedName := args[0]
+	URL := args[1]
+
+	ctx := context.Background()
+	currentUser, err := state.db.GetUser(ctx, state.Config.CurrentUserName)
+
+	if err != nil {
+		return fmt.Errorf("'GetUser' failed while adding feed '%s', '%s'", feedName, URL)
+	}
+
+	feed, err := state.db.CreateFeed(ctx, database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      feedName,
+		Url:       URL,
+		UserID:    currentUser.ID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("'CreateFeed' failed for feed '%s', '%s'", feedName, URL)
+	}
+
+	fmt.Println(feed)
+	return nil
+}
+
 /** Automatically register all handler functions. */
 func init() {
 	commandRegistry["login"] = handlerLogin
@@ -272,4 +304,5 @@ func init() {
 	commandRegistry["reset"] = handlerReset
 	commandRegistry["users"] = handlerUsers
 	commandRegistry["agg"] = handlerAgg
+	commandRegistry["addfeed"] = handlerAddFeed
 }
