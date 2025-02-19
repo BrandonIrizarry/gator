@@ -297,6 +297,31 @@ func handlerAddFeed(state state, args ...string) error {
 	return nil
 }
 
+func handlerFeeds(state state, args ...string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("The 'feeds' command takes no arguments")
+	}
+
+	ctx := context.Background()
+	feeds, err := state.db.GetFeeds(ctx)
+
+	if err != nil {
+		return fmt.Errorf("'GetField' failed")
+	}
+
+	for _, feed := range feeds {
+		user, err := state.db.GetUserByID(ctx, feed.UserID)
+
+		if err != nil {
+			return fmt.Errorf("Couldn't get user associated with feed %v\n", feed)
+		}
+
+		fmt.Printf("%q, added by user %s\n", feed.Name, user.Name)
+	}
+
+	return nil
+}
+
 /** Automatically register all handler functions. */
 func init() {
 	commandRegistry["login"] = handlerLogin
@@ -305,4 +330,5 @@ func init() {
 	commandRegistry["users"] = handlerUsers
 	commandRegistry["agg"] = handlerAgg
 	commandRegistry["addfeed"] = handlerAddFeed
+	commandRegistry["feeds"] = handlerFeeds
 }
