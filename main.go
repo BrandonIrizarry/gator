@@ -49,7 +49,7 @@ func parseAndExecute(state configuration.StateType, args ...string) error {
 	}
 
 	// Invoke the given command.
-	if err = command(state, os.Args[2:]...); err != nil {
+	if err = command(state, os.Args[2:]); err != nil {
 		return err
 	}
 

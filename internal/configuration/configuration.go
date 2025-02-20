@@ -36,7 +36,7 @@ type state struct {
   - An abbreviation for the canonical type signature CLI commands have
     as Go functions.
 */
-type cliHandler = func(state, ...string) error
+type cliHandler = func(state, []string) error
 type StateType = state
 
 /** The command registry proper. */
@@ -137,7 +137,7 @@ func GetCommand(commandName string) (cliHandler, error) {
     command line arguments; rather, they are the intended arguments to
     the command itself (_not_ including the command name).
 */
-func handlerLogin(state state, args ...string) error {
+func handlerLogin(state state, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing username argument")
 	}
@@ -163,7 +163,7 @@ func handlerLogin(state state, args ...string) error {
   - Add (that is, register) the specified user to the 'users'
     table.
 */
-func handlerRegister(state state, args ...string) error {
+func handlerRegister(state state, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing username argument. Who are you registering?")
 	}
@@ -207,7 +207,7 @@ func handlerRegister(state state, args ...string) error {
   - Delete all records in the 'users' table. Used for testing purposes
     only.
 */
-func handlerReset(state state, args ...string) error {
+func handlerReset(state state, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("The 'reset' command takes no arguments")
 	}
@@ -221,7 +221,7 @@ func handlerReset(state state, args ...string) error {
 	return nil
 }
 
-func handlerUsers(state state, args ...string) error {
+func handlerUsers(state state, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("The 'users' command takes no arguments")
 	}
@@ -247,7 +247,7 @@ func handlerUsers(state state, args ...string) error {
 	return nil
 }
 
-func handlerAgg(state state, args ...string) error {
+func handlerAgg(state state, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("The 'agg' command takes no arguments")
 	}
@@ -265,7 +265,7 @@ func handlerAgg(state state, args ...string) error {
 	return nil
 }
 
-func handlerAddFeed(state state, args ...string) error {
+func handlerAddFeed(state state, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("The 'addfeed' command takes a NAME and URL argument")
 	}
@@ -309,7 +309,7 @@ func handlerAddFeed(state state, args ...string) error {
 	return nil
 }
 
-func handlerFeeds(state state, args ...string) error {
+func handlerFeeds(state state, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("The 'feeds' command takes no arguments")
 	}
@@ -334,7 +334,7 @@ func handlerFeeds(state state, args ...string) error {
 	return nil
 }
 
-func handlerFollow(state state, args ...string) error {
+func handlerFollow(state state, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("The 'follow' command takes a single URL argument")
 	}
@@ -371,7 +371,7 @@ func handlerFollow(state state, args ...string) error {
 	return nil
 }
 
-func handlerFollowing(state state, args ...string) error {
+func handlerFollowing(state state, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("The 'following' command takes no arguments")
 	}
