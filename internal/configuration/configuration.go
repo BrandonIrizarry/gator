@@ -294,6 +294,18 @@ func handlerAddFeed(state state, args ...string) error {
 	}
 
 	fmt.Println(feed)
+
+	// Also create a feed-follow record for 'currentUser'.
+	if _, err = state.db.CreateFeedFollow(ctx, database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    currentUser.ID,
+		FeedID:    feed.ID,
+	}); err != nil {
+		return fmt.Errorf("Failed to create follow record for:\n\tuser %v\n\tand feed %v\n", currentUser, feed)
+	}
+
 	return nil
 }
 
