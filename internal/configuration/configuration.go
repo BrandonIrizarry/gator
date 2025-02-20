@@ -322,6 +322,68 @@ func handlerFeeds(state state, args ...string) error {
 	return nil
 }
 
+func handlerFollow(state state, args ...string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("The 'follow' command takes a single URL argument")
+	}
+
+	url := args[0]
+
+	ctx := context.Background()
+	user, err := state.db.GetUser(ctx, state.Config.CurrentUserName)
+
+	if err != nil {
+		return fmt.Errorf("Failed to fetch user inside 'handlerFollower'")
+	}
+
+	feed, err := state.db.GetFeedByURL(ctx, url)
+
+	if err != nil {
+		return fmt.Errorf("Failed to fetch feed inside 'handlerFollower'")
+	}
+
+	feedInfo, err := state.db.CreateFeedFollow(ctx, database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("Failed to create follow record for:\n\tuser %v\n\tand feed %v\n", user, feed)
+	}
+
+	fmt.Printf("Feed name: %q\nUser name: %q\n", feedInfo.Feedname, feedInfo.Username)
+
+	return nil
+}
+
+func handlerFollowing(state state, args ...string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("The 'following' command takes no arguments")
+	}
+
+	ctx := context.Background()
+	user, err := state.db.GetUser(ctx, state.Config.CurrentUserName)
+
+	if err != nil {
+		return fmt.Errorf("Failed to fetch user inside 'handlerFollowing'")
+	}
+
+	feedFollowsInfo, err := state.db.GetFeedFollowsForUser(ctx, user.ID)
+
+	if err != nil {
+		return fmt.Errorf("Failed to fetch feed-follows info for user %v\n", user)
+	}
+
+	for _, info := range feedFollowsInfo {
+		fmt.Println(info.Feedname)
+	}
+
+	return nil
+}
+
 /** Automatically register all handler functions. */
 func init() {
 	commandRegistry["login"] = handlerLogin
@@ -331,4 +393,6 @@ func init() {
 	commandRegistry["agg"] = handlerAgg
 	commandRegistry["addfeed"] = handlerAddFeed
 	commandRegistry["feeds"] = handlerFeeds
+	commandRegistry["follow"] = handlerFollow
+	commandRegistry["following"] = handlerFollowing
 }
