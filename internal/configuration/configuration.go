@@ -376,10 +376,19 @@ func handlerFollowing(state state, args []string, currentUser database.User) err
 	return nil
 }
 
+/*
+  - A function to provide post-login commands (cliLoggedInCommand)
+    with the currently logged-in user.
+
+    Essentially, this function converts a given cliLoggedInCommand to
+    a cliCommand usable from the main package.
+*/
 func middlewareWrapper(s state, command cliLoggedInCommand) cliCommand {
 	currentUser, err := s.db.GetUser(context.Background(), s.Config.CurrentUserName)
 
 	if err != nil {
+		// In case of error, the best we can do is return a dummy
+		// function which, when invoked, will return the actual error.
 		return func(_ state, _ []string) error {
 			return fmt.Errorf("Failed to get user inside middleware wrapper function")
 		}
