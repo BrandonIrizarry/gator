@@ -376,6 +376,25 @@ func handlerFollowing(state state, args []string, currentUser database.User) err
 	return nil
 }
 
+func handlerUnfollow(state state, args []string, currentUser database.User) error {
+	if len(args) != 1 {
+		return fmt.Errorf("The command 'unfollow' takes a single URL  argument")
+	}
+
+	url := args[0]
+
+	if numDeleted, err := state.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: currentUser.ID,
+		Url:    url,
+	}); err != nil {
+		return fmt.Errorf("Failed to delete feed-follow with URL %q\n", url)
+	} else if numDeleted == 0 {
+		return fmt.Errorf("URL %q doesn't exist in the feed-follows record\n", url)
+	}
+
+	return nil
+}
+
 /*
   - A function to provide post-login commands (cliLoggedInCommand)
     with the currently logged-in user.
@@ -412,4 +431,5 @@ func InitMiddleware(s state) {
 	commandRegistry["addfeed"] = middlewareWrapper(s, handlerAddFeed)
 	commandRegistry["follow"] = middlewareWrapper(s, handlerFollow)
 	commandRegistry["following"] = middlewareWrapper(s, handlerFollowing)
+	commandRegistry["unfollow"] = middlewareWrapper(s, handlerUnfollow)
 }
