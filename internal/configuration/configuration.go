@@ -403,8 +403,8 @@ func init() {
 	commandRegistry["reset"] = handlerReset
 	commandRegistry["users"] = handlerUsers
 	commandRegistry["agg"] = handlerAgg
-	commandRegistry["addfeed"] = handlerAddFeed
 	commandRegistry["feeds"] = handlerFeeds
+	commandRegistry["addfeed"] = handlerAddFeed
 	commandRegistry["follow"] = handlerFollow
 	commandRegistry["following"] = handlerFollowing
 }
