@@ -36,11 +36,13 @@ type state struct {
   - An abbreviation for the canonical type signature CLI commands have
     as Go functions.
 */
-type cliHandler = func(state, []string) error
+type cliCommand = func(state, []string) error
+type cliLoggedInCommand = func(state, []string, database.User) error
+
 type StateType = state
 
 /** The command registry proper. */
-var commandRegistry = make(map[string]cliHandler)
+var commandRegistry = make(map[string]cliCommand)
 
 /** Helper to facilitate creating a new state. */
 func NewState(configBasename string, dbURL string) (state, error) {
@@ -116,7 +118,7 @@ func SetUser(state state, username string) error {
 	return nil
 }
 
-func GetCommand(commandName string) (cliHandler, error) {
+func GetCommand(commandName string) (cliCommand, error) {
 	fn, ok := commandRegistry[commandName]
 
 	if !ok {
@@ -265,7 +267,7 @@ func handlerAgg(state state, args []string) error {
 	return nil
 }
 
-func handlerAddFeed(state state, args []string) error {
+func handlerAddFeed(state state, args []string, currentUser database.User) error {
 	if len(args) != 2 {
 		return fmt.Errorf("The 'addfeed' command takes a NAME and URL argument")
 	}
@@ -273,14 +275,7 @@ func handlerAddFeed(state state, args []string) error {
 	feedName := args[0]
 	URL := args[1]
 
-	ctx := context.Background()
-	currentUser, err := state.db.GetUser(ctx, state.Config.CurrentUserName)
-
-	if err != nil {
-		return fmt.Errorf("'GetUser' failed while adding feed '%s', '%s'", feedName, URL)
-	}
-
-	feed, err := state.db.CreateFeed(ctx, database.CreateFeedParams{
+	feed, err := state.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -296,7 +291,7 @@ func handlerAddFeed(state state, args []string) error {
 	fmt.Println(feed)
 
 	// Also create a feed-follow record for 'currentUser'.
-	if _, err = state.db.CreateFeedFollow(ctx, database.CreateFeedFollowParams{
+	if _, err = state.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -334,36 +329,28 @@ func handlerFeeds(state state, args []string) error {
 	return nil
 }
 
-func handlerFollow(state state, args []string) error {
+func handlerFollow(state state, args []string, currentUser database.User) error {
 	if len(args) != 1 {
 		return fmt.Errorf("The 'follow' command takes a single URL argument")
 	}
 
 	url := args[0]
-
-	ctx := context.Background()
-	user, err := state.db.GetUser(ctx, state.Config.CurrentUserName)
-
-	if err != nil {
-		return fmt.Errorf("Failed to fetch user inside 'handlerFollower'")
-	}
-
-	feed, err := state.db.GetFeedByURL(ctx, url)
+	feed, err := state.db.GetFeedByURL(context.Background(), url)
 
 	if err != nil {
 		return fmt.Errorf("Failed to fetch feed inside 'handlerFollower'")
 	}
 
-	feedInfo, err := state.db.CreateFeedFollow(ctx, database.CreateFeedFollowParams{
+	feedInfo, err := state.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID:    user.ID,
+		UserID:    currentUser.ID,
 		FeedID:    feed.ID,
 	})
 
 	if err != nil {
-		return fmt.Errorf("Failed to create follow record for:\n\tuser %v\n\tand feed %v\n", user, feed)
+		return fmt.Errorf("Failed to create follow record for:\n\tuser %v\n\tand feed %v\n", currentUser, feed)
 	}
 
 	fmt.Printf("Feed name: %q\nUser name: %q\n", feedInfo.Feedname, feedInfo.Username)
@@ -371,22 +358,15 @@ func handlerFollow(state state, args []string) error {
 	return nil
 }
 
-func handlerFollowing(state state, args []string) error {
+func handlerFollowing(state state, args []string, currentUser database.User) error {
 	if len(args) > 0 {
 		return fmt.Errorf("The 'following' command takes no arguments")
 	}
 
-	ctx := context.Background()
-	user, err := state.db.GetUser(ctx, state.Config.CurrentUserName)
+	feedFollowsInfo, err := state.db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
 
 	if err != nil {
-		return fmt.Errorf("Failed to fetch user inside 'handlerFollowing'")
-	}
-
-	feedFollowsInfo, err := state.db.GetFeedFollowsForUser(ctx, user.ID)
-
-	if err != nil {
-		return fmt.Errorf("Failed to fetch feed-follows info for user %v\n", user)
+		return fmt.Errorf("Failed to fetch feed-follows info for user %v\n", currentUser)
 	}
 
 	for _, info := range feedFollowsInfo {
@@ -396,15 +376,31 @@ func handlerFollowing(state state, args []string) error {
 	return nil
 }
 
-/** Automatically register all handler functions. */
-func init() {
+func middlewareWrapper(s state, command cliLoggedInCommand) cliCommand {
+	currentUser, err := s.db.GetUser(context.Background(), s.Config.CurrentUserName)
+
+	if err != nil {
+		return func(_ state, _ []string) error {
+			return fmt.Errorf("Failed to get user inside middleware wrapper function")
+		}
+	}
+
+	return func(s state, args []string) error {
+		return command(s, args, currentUser)
+	}
+}
+
+func InitMiddleware(s state) {
 	commandRegistry["login"] = handlerLogin
 	commandRegistry["register"] = handlerRegister
 	commandRegistry["reset"] = handlerReset
 	commandRegistry["users"] = handlerUsers
 	commandRegistry["agg"] = handlerAgg
 	commandRegistry["feeds"] = handlerFeeds
-	commandRegistry["addfeed"] = handlerAddFeed
-	commandRegistry["follow"] = handlerFollow
-	commandRegistry["following"] = handlerFollowing
+
+	// The following commands are defined in terms of post-login
+	// middleware wrapper calls.
+	commandRegistry["addfeed"] = middlewareWrapper(s, handlerAddFeed)
+	commandRegistry["follow"] = middlewareWrapper(s, handlerFollow)
+	commandRegistry["following"] = middlewareWrapper(s, handlerFollowing)
 }

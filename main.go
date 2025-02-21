@@ -41,6 +41,8 @@ func parseAndExecute(state configuration.StateType, args ...string) error {
 		os.Exit(1)
 	}
 
+	configuration.InitMiddleware(state)
+
 	commandName := args[1]
 	command, err := configuration.GetCommand(commandName)
 
