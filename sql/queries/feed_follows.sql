@@ -30,3 +30,10 @@ WHERE users.id = $1;
 -- name: DeleteFeedFollow :execrows
 DELETE FROM feed_follows USING feeds
 WHERE feed_follows.user_id = $1 AND feeds.url = $2;
+
+-- name: GetNextFeedToFetch :one
+SELECT * FROM feed_follows
+INNER JOIN feeds
+ON feeds.id = feed_follows.feed_id
+ORDER BY feeds.last_fetched_at NULLS FIRST;
+
