@@ -250,17 +250,41 @@ func handlerUsers(state state, args []string) error {
 }
 
 func handlerAgg(state state, args []string) error {
-	if len(args) > 0 {
-		return fmt.Errorf("The 'agg' command takes no arguments")
+	if len(args) != 1 {
+		return fmt.Errorf("The 'agg' command takes a single time-between-requests argument")
 	}
 
-	rssFeed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	duration, err := time.ParseDuration(args[0])
 
 	if err != nil {
-		return fmt.Errorf("Error fetching feed: %v\n", rssFeed)
+		return fmt.Errorf("Unable to parse %q as a duration", duration)
 	}
 
-	fmt.Println(rssFeed)
+	fmt.Printf("Collecting feeds every %s\n", duration)
+
+	// Continuously scrape the most stale feed.
+	ticker := time.NewTicker(duration)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		feed, err := state.db.GetNextFeedToFetch(context.Background())
+
+		if err != nil {
+			return fmt.Errorf("Failed to fetch feed %v", feed)
+		}
+
+		if err = state.db.MarkFeedFetched(context.Background(), feed.ID); err != nil {
+			return fmt.Errorf("Failed to mark as fetched: feed %v", feed)
+		}
+
+		rssFeed, err := rss.FetchFeed(context.Background(), feed.Url)
+
+		if err != nil {
+			return fmt.Errorf("Error fetching feed: %v\n", rssFeed)
+		}
+
+		fmt.Println(rssFeed)
+	}
 
 	return nil
 }
