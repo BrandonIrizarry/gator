@@ -280,7 +280,7 @@ func handlerAgg(state state, args []string) error {
 		rssFeed, err := rss.FetchFeed(context.Background(), feed.Url)
 
 		if err != nil {
-			return fmt.Errorf("Error fetching feed: %v\n", rssFeed)
+			return err
 		}
 
 		fmt.Println(rssFeed)

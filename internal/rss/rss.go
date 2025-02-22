@@ -7,6 +7,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -58,6 +59,7 @@ func FetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
 
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "From 'http.NewRequestWithContext'\n")
 		return nil, err
 	}
 
@@ -70,6 +72,7 @@ func FetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	resp, err := client.Do(req)
 
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "From 'client.Do'\n")
 		return nil, err
 	}
 
@@ -79,6 +82,7 @@ func FetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	xmlBytes, err := io.ReadAll(resp.Body)
 
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "From 'io.ReadAll'\n")
 		return nil, err
 	}
 
