@@ -254,9 +254,7 @@ func handlerAgg(state state, args []string) error {
 		return fmt.Errorf("The 'agg' command takes no arguments")
 	}
 
-	ctx := context.Background()
-
-	rssFeed, err := rss.FetchFeed(ctx, "https://www.wagslane.dev/index.xml")
+	rssFeed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
 
 	if err != nil {
 		return fmt.Errorf("Error fetching feed: %v\n", rssFeed)
