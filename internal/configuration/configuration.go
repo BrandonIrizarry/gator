@@ -270,7 +270,12 @@ func handlerAgg(state state, args []string) error {
 		feed, err := state.db.GetNextFeedToFetch(context.Background())
 
 		if err != nil {
-			return fmt.Errorf("Failed to fetch feed %v", feed)
+			if err == sql.ErrNoRows {
+				fmt.Println("Found nothing")
+				continue
+			} else {
+				return fmt.Errorf("Failed to fetch feed %v", feed)
+			}
 		}
 
 		if err = state.db.MarkFeedFetched(context.Background(), feed.ID); err != nil {
