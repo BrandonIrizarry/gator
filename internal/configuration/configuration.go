@@ -428,7 +428,6 @@ func handlerBrowse(state state, args []string, currentUser database.User) error 
 
 	limit := int32(limit64)
 
-	fmt.Println(currentUser, limit)
 	posts, err := state.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
 		UserID: currentUser.ID,
 		Limit:  limit,
@@ -438,7 +437,6 @@ func handlerBrowse(state state, args []string, currentUser database.User) error 
 		return err
 	}
 
-	fmt.Println(posts)
 	for _, post := range posts {
 		fmt.Println(post)
 	}
