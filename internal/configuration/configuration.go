@@ -5,10 +5,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/BrandonIrizarry/gator/internal/database"
 	"github.com/BrandonIrizarry/gator/internal/rss"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/michaljemala/pqerror"
 	"os"
 	"time"
 )
@@ -454,6 +457,16 @@ func scrapeFeeds(state state) error {
 		if err == sql.ErrNoRows {
 			fmt.Printf("Added post %v\n", post)
 			continue
+		} else {
+			var pqErr *pq.Error
+
+			if errors.As(err, &pqErr) {
+				constraint := pqErr.Constraint
+
+				if !(pqErr.Code == pqerror.UniqueViolation && constraint == "posts_url_key") {
+					return err
+				}
+			}
 		}
 	}
 
