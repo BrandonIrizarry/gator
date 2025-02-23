@@ -13,6 +13,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/michaljemala/pqerror"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -409,6 +410,42 @@ func handlerUnfollow(state state, args []string, currentUser database.User) erro
 	return nil
 }
 
+func handlerBrowse(state state, args []string, currentUser database.User) error {
+	// The cast is required because it's being used as a LIMIT
+	// parameter for a query.
+	var err error
+	var limit64 int64
+
+	if len(args) == 1 {
+		limit64, err = strconv.ParseInt(args[0], 10, 32)
+
+		if err != nil {
+			return fmt.Errorf("Can't parse %q as an int\n", args[0])
+		}
+	} else if len(args) > 1 {
+		return fmt.Errorf("Too many args")
+	}
+
+	limit := int32(limit64)
+
+	fmt.Println(currentUser)
+	posts, err := state.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: currentUser.ID,
+		Limit:  limit,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(posts)
+	for _, post := range posts {
+		fmt.Println(post)
+	}
+
+	return nil
+}
+
 func scrapeFeeds(state state) error {
 	feedInfo, err := state.db.GetNextFeedToFetch(context.Background())
 
@@ -538,4 +575,5 @@ func InitMiddleware(s state) {
 	commandRegistry["follow"] = middlewareWrapper(s, handlerFollow)
 	commandRegistry["following"] = middlewareWrapper(s, handlerFollowing)
 	commandRegistry["unfollow"] = middlewareWrapper(s, handlerUnfollow)
+	commandRegistry["browse"] = middlewareWrapper(s, handlerBrowse)
 }
