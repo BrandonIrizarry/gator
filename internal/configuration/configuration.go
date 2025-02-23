@@ -414,7 +414,7 @@ func handlerBrowse(state state, args []string, currentUser database.User) error 
 	// The cast is required because it's being used as a LIMIT
 	// parameter for a query.
 	var err error
-	var limit64 int64
+	var limit64 int64 = 2
 
 	if len(args) == 1 {
 		limit64, err = strconv.ParseInt(args[0], 10, 32)
@@ -428,7 +428,7 @@ func handlerBrowse(state state, args []string, currentUser database.User) error 
 
 	limit := int32(limit64)
 
-	fmt.Println(currentUser)
+	fmt.Println(currentUser, limit)
 	posts, err := state.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
 		UserID: currentUser.ID,
 		Limit:  limit,
