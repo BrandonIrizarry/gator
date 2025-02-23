@@ -288,7 +288,9 @@ func handlerAgg(state state, args []string) error {
 			return err
 		}
 
-		fmt.Println(rssFeed)
+		for _, rssItem := range rssFeed.Channel.Item {
+			fmt.Println(rssItem.Title)
+		}
 	}
 
 	return nil
