@@ -430,7 +430,31 @@ func scrapeFeeds(state state) error {
 	}
 
 	for _, rssItem := range rssFeed.Channel.Item {
-		fmt.Println(rssItem.Title)
+		// Parse the provided publication date into a Go time object.
+		pubDate, err := parseRawTime(rssItem.PubDate)
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(rssItem.Link)
+
+		// Save the current rssItem to the 'posts' table.
+		post, err := state.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       rssItem.Title,
+			Url:         rssItem.Link,
+			Description: rssItem.Description,
+			PublishedAt: pubDate,
+			FeedID:      feedInfo.FeedID,
+		})
+
+		if err == sql.ErrNoRows {
+			fmt.Printf("Added post %v\n", post)
+			continue
+		}
 	}
 
 	return nil
