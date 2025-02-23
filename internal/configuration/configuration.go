@@ -6,12 +6,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
-
 	"github.com/BrandonIrizarry/gator/internal/database"
 	"github.com/BrandonIrizarry/gator/internal/rss"
 	"github.com/google/uuid"
+	"os"
+	"time"
 )
 
 /** A struct for unmarshalling Gator's current JSON configuration. */
@@ -260,36 +259,19 @@ func handlerAgg(state state, args []string) error {
 		return fmt.Errorf("Unable to parse %q as a duration", duration)
 	}
 
-	fmt.Printf("Collecting feeds every %s\n", duration)
+	fmt.Printf("Collecting first feed now; afterwards every %s\n", duration)
+
+	if err = scrapeFeeds(state); err != nil {
+		return err
+	}
 
 	// Continuously scrape the most stale feed.
 	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		feed, err := state.db.GetNextFeedToFetch(context.Background())
-
-		if err != nil {
-			if err == sql.ErrNoRows {
-				fmt.Println("Found nothing")
-				continue
-			} else {
-				return fmt.Errorf("Failed to fetch feed %v", feed)
-			}
-		}
-
-		if err = state.db.MarkFeedFetched(context.Background(), feed.ID); err != nil {
-			return fmt.Errorf("Failed to mark as fetched: feed %v", feed)
-		}
-
-		rssFeed, err := rss.FetchFeed(context.Background(), feed.Url)
-
-		if err != nil {
+		if err = scrapeFeeds(state); err != nil {
 			return err
-		}
-
-		for _, rssItem := range rssFeed.Channel.Item {
-			fmt.Println(rssItem.Title)
 		}
 	}
 
@@ -419,6 +401,36 @@ func handlerUnfollow(state state, args []string, currentUser database.User) erro
 		return fmt.Errorf("Failed to delete feed-follow with URL %q\n", url)
 	} else if numDeleted == 0 {
 		return fmt.Errorf("URL %q doesn't exist in the feed-follows record\n", url)
+	}
+
+	return nil
+}
+
+func scrapeFeeds(state state) error {
+	feed, err := state.db.GetNextFeedToFetch(context.Background())
+
+	if err != nil {
+		// For us, the absence of a feed isn't an error.
+		if err == sql.ErrNoRows {
+			fmt.Println("Found nothing")
+			return nil
+		} else {
+			return fmt.Errorf("Failed to fetch feed %v", feed)
+		}
+	}
+
+	if err = state.db.MarkFeedFetched(context.Background(), feed.ID); err != nil {
+		return fmt.Errorf("Failed to mark as fetched: feed %v", feed)
+	}
+
+	rssFeed, err := rss.FetchFeed(context.Background(), feed.Url)
+
+	if err != nil {
+		return err
+	}
+
+	for _, rssItem := range rssFeed.Channel.Item {
+		fmt.Println(rssItem.Title)
 	}
 
 	return nil
