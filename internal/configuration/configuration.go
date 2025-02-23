@@ -259,7 +259,7 @@ func handlerAgg(state state, args []string) error {
 		return fmt.Errorf("Unable to parse %q as a duration", duration)
 	}
 
-	fmt.Printf("Collecting first feed now; afterwards every %s\n", duration)
+	fmt.Printf("Collecting first feed now; afterwards every %s\n\n", duration)
 
 	if err = scrapeFeeds(state); err != nil {
 		return err
