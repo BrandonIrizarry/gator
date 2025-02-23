@@ -437,6 +437,34 @@ func scrapeFeeds(state state) error {
 }
 
 /*
+Attempt to parse every RFC layout in the time package.
+Return the first valid time.Time. If there are none, return an error.
+*/
+func parseRawTime(timeStr string) (time.Time, error) {
+	layouts := []string{
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano,
+	}
+
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, timeStr)
+
+		if err == nil {
+			return t, nil
+		}
+	}
+
+	// Construct a zero-time, to return as a degenerate value.
+	var zero time.Time
+	return zero, fmt.Errorf("Can't get a valid time from %q; maybe add this layout?", timeStr)
+}
+
+/*
   - A function to provide post-login commands (cliLoggedInCommand)
     with the currently logged-in user.
 
