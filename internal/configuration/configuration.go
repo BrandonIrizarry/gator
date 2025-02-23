@@ -412,7 +412,7 @@ func scrapeFeeds(state state) error {
 	if err != nil {
 		// For us, the absence of a feed isn't an error.
 		if err == sql.ErrNoRows {
-			fmt.Println("Found nothing")
+			fmt.Println("<no feeds available at this time>")
 			return nil
 		} else {
 			return fmt.Errorf("Failed to fetch feed %v", feed)
