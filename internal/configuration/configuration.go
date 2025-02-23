@@ -407,7 +407,7 @@ func handlerUnfollow(state state, args []string, currentUser database.User) erro
 }
 
 func scrapeFeeds(state state) error {
-	feed, err := state.db.GetNextFeedToFetch(context.Background())
+	feedInfo, err := state.db.GetNextFeedToFetch(context.Background())
 
 	if err != nil {
 		// For us, the absence of a feed isn't an error.
@@ -415,15 +415,15 @@ func scrapeFeeds(state state) error {
 			fmt.Println("<no feeds available at this time>")
 			return nil
 		} else {
-			return fmt.Errorf("Failed to fetch feed %v", feed)
+			return fmt.Errorf("Failed to fetch feed %v", feedInfo)
 		}
 	}
 
-	if err = state.db.MarkFeedFetched(context.Background(), feed.ID); err != nil {
-		return fmt.Errorf("Failed to mark as fetched: feed %v", feed)
+	if err = state.db.MarkFeedFetched(context.Background(), feedInfo.ID); err != nil {
+		return fmt.Errorf("Failed to mark as fetched: feed %v", feedInfo)
 	}
 
-	rssFeed, err := rss.FetchFeed(context.Background(), feed.Url)
+	rssFeed, err := rss.FetchFeed(context.Background(), feedInfo.Url)
 
 	if err != nil {
 		return err
