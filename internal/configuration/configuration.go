@@ -438,6 +438,7 @@ func handlerBrowse(state state, args []string, currentUser database.User) error 
 	}
 
 	for _, post := range posts {
+		fmt.Println(post.PublishedAt)
 		fmt.Println(post.Title)
 		fmt.Println(post.Description)
 		fmt.Println()
