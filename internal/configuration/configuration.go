@@ -447,7 +447,7 @@ func handlerBrowse(state state, args []string, currentUser database.User) error 
 }
 
 func scrapeFeeds(state state) error {
-	feedInfo, err := state.db.GetNextFeedToFetch(context.Background())
+	feedsInfo, err := state.db.GetNextFeedToFetch(context.Background())
 
 	if err != nil {
 		// For us, the absence of a feed isn't an error.
@@ -455,53 +455,55 @@ func scrapeFeeds(state state) error {
 			fmt.Println("<no feeds available at this time>")
 			return nil
 		} else {
-			return fmt.Errorf("Failed to fetch feed %v", feedInfo)
+			return fmt.Errorf("Failed to fetch feed %v", feedsInfo)
 		}
 	}
 
-	if err = state.db.MarkFeedFetched(context.Background(), feedInfo.ID); err != nil {
-		return fmt.Errorf("Failed to mark as fetched: feed %v", feedInfo)
-	}
+	for _, info := range feedsInfo {
+		if err = state.db.MarkFeedFetched(context.Background(), info.ID); err != nil {
+			return fmt.Errorf("Failed to mark as fetched: feed %v", info)
+		}
 
-	rssFeed, err := rss.FetchFeed(context.Background(), feedInfo.Url)
-
-	if err != nil {
-		return err
-	}
-
-	for _, rssItem := range rssFeed.Channel.Item {
-		// Parse the provided publication date into a Go time object.
-		pubDate, err := parseRawTime(rssItem.PubDate)
+		rssFeed, err := rss.FetchFeed(context.Background(), info.Url)
 
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(rssItem.Link)
+		for _, rssItem := range rssFeed.Channel.Item {
+			// Parse the provided publication date into a Go time object.
+			pubDate, err := parseRawTime(rssItem.PubDate)
 
-		// Save the current rssItem to the 'posts' table.
-		post, err := state.db.CreatePost(context.Background(), database.CreatePostParams{
-			ID:          uuid.New(),
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-			Title:       rssItem.Title,
-			Url:         rssItem.Link,
-			Description: rssItem.Description,
-			PublishedAt: pubDate,
-			FeedID:      feedInfo.FeedID,
-		})
+			if err != nil {
+				return err
+			}
 
-		if err == sql.ErrNoRows {
-			fmt.Printf("Added post %v\n", post)
-			continue
-		} else {
-			var pqErr *pq.Error
+			fmt.Println(rssItem.Link)
 
-			if errors.As(err, &pqErr) {
-				constraint := pqErr.Constraint
+			// Save the current rssItem to the 'posts' table.
+			post, err := state.db.CreatePost(context.Background(), database.CreatePostParams{
+				ID:          uuid.New(),
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+				Title:       rssItem.Title,
+				Url:         rssItem.Link,
+				Description: rssItem.Description,
+				PublishedAt: pubDate,
+				FeedID:      info.FeedID,
+			})
 
-				if !(pqErr.Code == pqerror.UniqueViolation && constraint == "posts_url_key") {
-					return err
+			if err == sql.ErrNoRows {
+				fmt.Printf("Added post %v\n", post)
+				continue
+			} else {
+				var pqErr *pq.Error
+
+				if errors.As(err, &pqErr) {
+					constraint := pqErr.Constraint
+
+					if !(pqErr.Code == pqerror.UniqueViolation && constraint == "posts_url_key") {
+						return err
+					}
 				}
 			}
 		}

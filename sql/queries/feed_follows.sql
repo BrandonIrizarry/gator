@@ -31,7 +31,7 @@ WHERE users.id = $1;
 DELETE FROM feed_follows USING feeds
 WHERE feed_follows.user_id = $1 AND feeds.url = $2;
 
--- name: GetNextFeedToFetch :one
+-- name: GetNextFeedToFetch :many
 SELECT * FROM feed_follows
 INNER JOIN feeds
 ON feeds.id = feed_follows.feed_id
